@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OSRS Progression Advisor</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0b08;--bg2:#141008;--bg3:#1a1508;
+  --panel:#1e1a0e;--panel2:#252010;
+  --border:#3a3020;--border2:#4a3f28;
+  --gold:#c8a84b;--gold2:#e8c878;--gold3:#a07830;
+  --amber:#d4882a;--text:#e8dcc8;--text2:#b8a888;--text3:#806858;
+  --green:#48a848;--green2:#78c878;--red:#c84848;
+  --blue:#4888c8;--blue2:#78aae8;--iron:#9898a8;--iron2:#b8b8c8;
+  --purple:#a848c8;--purple2:#c878e8;
+}
+body{background:var(--bg);color:var(--text);font-family:'IM Fell English',Georgia,serif;min-height:100vh;background-image:radial-gradient(ellipse at 20% 0%,rgba(100,70,10,.15) 0%,transparent 60%),radial-gradient(ellipse at 80% 100%,rgba(60,40,10,.12) 0%,transparent 60%)}
+header{border-bottom:1px solid var(--border2);padding:1.2rem 2rem;display:flex;align-items:center;gap:1.2rem;background:linear-gradient(180deg,rgba(40,30,8,.8) 0%,transparent 100%)}
+.logo-icon{width:48px;height:48px;background:linear-gradient(135deg,var(--gold3),var(--gold),var(--gold2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:26px;border:1px solid var(--gold);flex-shrink:0}
+h1{font-family:'Cinzel',serif;font-size:clamp(1.2rem,2.5vw,1.8rem);font-weight:700;color:var(--gold2);text-shadow:0 0 30px rgba(200,168,75,.4);line-height:1.1}
+.subtitle{font-size:.82rem;color:var(--text3);font-style:italic}
+.nav-mode{margin-left:auto;display:flex;gap:.4rem}
+.mode-pill{font-family:'Cinzel',serif;font-size:.72rem;font-weight:600;padding:.45rem 1rem;border-radius:4px;cursor:pointer;border:1px solid var(--border2);background:var(--panel);color:var(--text2);transition:all .2s;letter-spacing:.03em}
+.mode-pill.active-normal{background:#1a2e1a;border-color:var(--green);color:var(--green2)}
+.mode-pill.active-iron{background:#1a1a2e;border-color:var(--iron);color:var(--iron2)}
+main{max-width:1200px;margin:0 auto;padding:1.5rem 2rem}
+.search-card{background:var(--panel);border:1px solid var(--border2);border-radius:8px;padding:1.4rem 1.75rem;margin-bottom:1.5rem;position:relative;overflow:hidden}
+.search-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.search-label{font-family:'Cinzel',serif;font-size:.75rem;font-weight:600;color:var(--gold3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.6rem;display:block}
+.search-row{display:flex;gap:.6rem;align-items:stretch}
+.search-input{flex:1;background:var(--bg2);border:1px solid var(--border2);border-radius:4px;padding:.65rem .9rem;color:var(--text);font-family:'IM Fell English',serif;font-size:.95rem;outline:none;transition:border-color .2s}
+.search-input:focus{border-color:var(--gold3)}
+.search-input::placeholder{color:var(--text3)}
+.mode-toggle{display:flex;border:1px solid var(--border2);border-radius:4px;overflow:hidden}
+.mt-btn{padding:.65rem .9rem;font-family:'Cinzel',serif;font-size:.7rem;font-weight:600;letter-spacing:.04em;cursor:pointer;border:none;transition:all .2s;white-space:nowrap;background:var(--bg3);color:var(--text2)}
+.mt-btn.iron{border-left:1px solid var(--border2)}
+.mt-btn.sel-normal{background:#1a2e1a;color:var(--green2)}
+.mt-btn.sel-iron{background:#1a1a2e;color:var(--iron2)}
+.scan-btn{font-family:'Cinzel',serif;font-size:.82rem;font-weight:700;padding:.65rem 1.5rem;background:linear-gradient(135deg,var(--gold3),var(--amber));color:#1a1000;border:none;border-radius:4px;cursor:pointer;letter-spacing:.05em;text-transform:uppercase;transition:all .2s;white-space:nowrap}
+.scan-btn:hover{filter:brightness(1.15);transform:translateY(-1px)}
+.scan-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.status{margin-top:.6rem;font-size:.8rem;color:var(--text3);font-style:italic;min-height:1.1em}
+.status.loading{color:var(--amber)}.status.error{color:var(--red)}.status.ok{color:var(--green)}
+.grid-main{display:grid;grid-template-columns:280px 1fr;gap:1.1rem;animation:fadeIn .4s ease}
+@media(max-width:820px){.grid-main{grid-template-columns:1fr}.search-row{flex-wrap:wrap}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.panel{background:var(--panel);border:1px solid var(--border2);border-radius:8px;overflow:hidden}
+.ph{background:var(--panel2);border-bottom:1px solid var(--border);padding:.65rem .9rem;display:flex;align-items:center;gap:.5rem}
+.pt{font-family:'Cinzel',serif;font-size:.75rem;font-weight:600;color:var(--gold);text-transform:uppercase;letter-spacing:.06em}
+.skills-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:.4rem}
+.sc{background:var(--bg2);border-radius:3px;padding:.3rem .35rem;display:flex;align-items:center;gap:.3rem;transition:background .15s;cursor:default}
+.sc:hover{background:var(--panel2)}
+.si{font-size:13px;line-height:1;flex-shrink:0}
+.sinfo{flex:1;min-width:0}
+.sn{font-family:'Cinzel',serif;font-size:.52rem;color:var(--text3);display:block;text-transform:uppercase;letter-spacing:.04em}
+.sl{font-size:.85rem;font-weight:500;color:var(--gold);font-family:'Source Code Pro',monospace;line-height:1.1}
+.sl.maxed{color:var(--amber)}
+.total-row{padding:.6rem .9rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--panel2)}
+.tl{font-family:'Cinzel',serif;font-size:.72rem;color:var(--text2);text-transform:uppercase;letter-spacing:.06em}
+.tv{font-family:'Source Code Pro',monospace;font-size:1.1rem;font-weight:500;color:var(--gold2)}
+.tab-bar{display:flex;background:var(--panel2);border-bottom:1px solid var(--border);overflow-x:auto}
+.tab-btn{flex-shrink:0;padding:.65rem .75rem;font-family:'Cinzel',serif;font-size:.67rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;border:none;background:transparent;color:var(--text3);border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--gold);border-bottom-color:var(--gold)}
+.adv-content{padding:1.1rem;flex:1;min-height:300px}
+.loading-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem;gap:1rem;color:var(--text3);font-style:italic}
+.spinner{font-size:2rem;animation:spin 2s linear infinite}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.step-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:.9rem 1rem;margin-bottom:.65rem;position:relative;transition:border-color .2s}
+.step-card:hover{border-color:var(--border2)}
+.step-card.ph{background:transparent;border:none;padding:0;margin:0;display:block}
+.step-card.pri-high{border-left:3px solid var(--amber)}
+.step-card.pri-med{border-left:3px solid var(--gold3)}
+.step-card.pri-low{border-left:3px solid var(--text3)}
+.badge{display:inline-block;font-family:'Cinzel',serif;font-size:.58rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:.18rem .5rem;border-radius:3px;margin-bottom:.4rem}
+.b-quest{background:rgba(72,136,200,.15);color:var(--blue2);border:1px solid rgba(72,136,200,.3)}
+.b-skill{background:rgba(72,168,72,.15);color:var(--green2);border:1px solid rgba(72,168,72,.3)}
+.b-gear{background:rgba(200,168,75,.15);color:var(--gold2);border:1px solid rgba(200,168,75,.3)}
+.b-money{background:rgba(212,136,42,.15);color:var(--amber);border:1px solid rgba(212,136,42,.3)}
+.b-unlock{background:rgba(168,72,200,.15);color:var(--purple2);border:1px solid rgba(168,72,200,.3)}
+.b-boss{background:rgba(200,72,72,.15);color:#e87878;border:1px solid rgba(200,72,72,.3)}
+.b-ready{background:rgba(72,168,72,.15);color:var(--green2);border:1px solid rgba(72,168,72,.3)}
+.b-soon{background:rgba(212,136,42,.15);color:var(--amber);border:1px solid rgba(212,136,42,.3)}
+.b-locked{background:rgba(128,104,88,.15);color:var(--text3);border:1px solid rgba(128,104,88,.3)}
+.step-title{font-family:'Cinzel',serif;font-size:.85rem;font-weight:600;color:var(--text);margin-bottom:.25rem}
+.step-desc{font-size:.83rem;color:var(--text2);line-height:1.55}
+.step-meta{margin-top:.5rem;display:flex;gap:.6rem;flex-wrap:wrap}
+.chip{font-family:'Source Code Pro',monospace;font-size:.68rem;color:var(--text3);display:flex;align-items:center;gap:.25rem}
+.chip span{color:var(--gold3)}
+.wiki-link{position:absolute;top:.65rem;right:.75rem;font-size:.65rem;color:var(--blue);text-decoration:none;font-family:'Cinzel',serif;text-transform:uppercase;letter-spacing:.04em;opacity:.55;transition:opacity .15s}
+.wiki-link:hover{opacity:1}
+.sec-label{font-family:'Cinzel',serif;font-size:.68rem;font-weight:600;color:var(--gold3);text-transform:uppercase;letter-spacing:.08em;margin:1rem 0 .55rem;display:flex;align-items:center;gap:.5rem}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.iron-flag{display:inline-flex;align-items:center;gap:.4rem;font-family:'Cinzel',serif;font-size:.68rem;color:var(--iron2);background:rgba(152,152,168,.12);border:1px solid rgba(152,152,168,.25);padding:.28rem .7rem;border-radius:20px;margin-bottom:.9rem}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem;color:var(--text3);text-align:center;gap:.9rem}
+.empty-icon{font-size:2.5rem;opacity:.35}
+.empty-text{font-size:.86rem;font-style:italic;max-width:280px;line-height:1.6}
+
+/* Quest tracker */
+.quest-tracker{display:flex;flex-direction:column;gap:.5rem}
+.quest-row{display:flex;align-items:center;gap:.6rem;padding:.65rem .8rem;background:var(--bg2);border:1px solid var(--border);border-radius:5px;transition:border-color .2s}
+.quest-row:hover{border-color:var(--border2)}
+.quest-status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.dot-ready{background:var(--green);box-shadow:0 0 8px rgba(72,168,72,.5)}
+.dot-soon{background:var(--amber);box-shadow:0 0 8px rgba(212,136,42,.4)}
+.dot-locked{background:var(--text3)}
+.quest-name{font-family:'Cinzel',serif;font-size:.8rem;color:var(--text);flex:1;min-width:0}
+.quest-reqs{font-size:.72rem;color:var(--text3);font-style:italic}
+.quest-reward{font-size:.7rem;color:var(--gold3);font-family:'Source Code Pro',monospace;white-space:nowrap}
+.progress-bar-wrap{background:var(--bg3);border-radius:20px;height:6px;margin:.25rem 0 .1rem;overflow:hidden}
+.progress-bar-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--gold3),var(--gold))}
+
+/* Boss calculator */
+.boss-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.75rem;margin-bottom:1rem}
+.boss-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:.85rem;transition:border-color .2s;cursor:pointer}
+.boss-card:hover{border-color:var(--border2)}
+.boss-card.selected{border-color:var(--gold);background:rgba(200,168,75,.05)}
+.boss-card.locked-boss{opacity:.5;cursor:not-allowed}
+.boss-name{font-family:'Cinzel',serif;font-size:.82rem;font-weight:600;color:var(--text);margin-bottom:.25rem}
+.boss-kph{font-family:'Source Code Pro',monospace;font-size:.72rem;color:var(--text3);margin-bottom:.4rem}
+.boss-gph{font-family:'Source Code Pro',monospace;font-size:1rem;font-weight:500;color:var(--green2)}
+.boss-reqs-text{font-size:.7rem;color:var(--text3);font-style:italic;margin-top:.3rem}
+.boss-lock-reason{font-size:.68rem;color:var(--red);font-style:italic;margin-top:.25rem}
+.calc-box{background:linear-gradient(135deg,rgba(200,168,75,.07),rgba(200,168,75,.02));border:1px solid rgba(200,168,75,.22);border-radius:6px;padding:1rem 1.1rem;margin-top:.75rem}
+.calc-title{font-family:'Cinzel',serif;font-size:.8rem;color:var(--gold);margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.06em}
+.calc-row{display:flex;align-items:center;gap:.75rem;margin-bottom:.55rem}
+.calc-label{font-size:.8rem;color:var(--text2);min-width:120px}
+.calc-input{background:var(--bg2);border:1px solid var(--border2);border-radius:3px;padding:.3rem .55rem;color:var(--gold2);font-family:'Source Code Pro',monospace;font-size:.85rem;width:80px;outline:none;text-align:right}
+.calc-input:focus{border-color:var(--gold3)}
+.calc-result{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--border)}
+.calc-stat{text-align:center}
+.calc-stat-val{font-family:'Source Code Pro',monospace;font-size:1.1rem;font-weight:500;color:var(--gold2);display:block}
+.calc-stat-lbl{font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-top:.15rem;display:block}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">⚔️</div>
+  <div>
+    <h1>OSRS Progression Advisor</h1>
+    <p class="subtitle">Quest paths, gear upgrades & boss income — tailored to your account</p>
+  </div>
+  <div class="nav-mode">
+    <button class="mode-pill" id="pill-normal" onclick="setMode('normal')">⚔ Normal</button>
+    <button class="mode-pill" id="pill-iron" onclick="setMode('iron')">🛡 Ironman</button>
+  </div>
+</header>
+
+<main>
+  <div class="search-card">
+    <span class="search-label">🔍 Enter your Old School RuneScape username</span>
+    <div class="search-row">
+      <input class="search-input" id="usr" placeholder="e.g. Zezima" maxlength="12" onkeydown="if(event.key==='Enter')scan()">
+      <div class="mode-toggle">
+        <button class="mt-btn sel-normal" id="mt-normal" onclick="setMode('normal')">⚔ Normal</button>
+        <button class="mt-btn iron" id="mt-iron" onclick="setMode('iron')">🛡 Ironman</button>
+      </div>
+      <button class="scan-btn" id="scan-btn" onclick="scan()">Scan Account</button>
+    </div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div id="results" style="display:none">
+    <div class="grid-main">
+      <!-- Left: Skills -->
+      <div class="panel" style="align-self:start">
+        <div class="ph"><span>📊</span><span class="pt">Skills</span></div>
+        <div class="skills-grid" id="skills-grid"></div>
+        <div class="total-row">
+          <span class="tl">Total Level</span>
+          <span class="tv" id="total-lv">—</span>
+        </div>
+      </div>
+
+      <!-- Right: Tabs -->
+      <div class="panel" style="display:flex;flex-direction:column">
+        <div class="tab-bar">
+          <button class="tab-btn active" id="tab-quest" onclick="switchTab('quest')">📜 Next Quests</button>
+          <button class="tab-btn" id="tab-gear" onclick="switchTab('gear')">⚔ Gear Path</button>
+          <button class="tab-btn" id="tab-money" onclick="switchTab('money')">💰 Money Making</button>
+          <button class="tab-btn" id="tab-boss" onclick="switchTab('boss')">💀 Boss Calculator</button>
+        </div>
+        <div class="adv-content" id="adv-content">
+          <div class="empty-state"><div class="empty-icon">🗺</div><p class="empty-text">Scan an account to receive guidance.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// ── Config ──────────────────────────────────────────────────────────────────
+// Change PROXY_BASE to your self-hosted backend URL for production.
+// If left empty, falls back to the public CORS proxy (less reliable).
+const PROXY_BASE = '';
+
+// ── Skill definitions ────────────────────────────────────────────────────────
+const SKILLS = [
+  {n:'Attack',i:'⚔️'},{n:'Hitpoints',i:'❤️'},{n:'Mining',i:'⛏️'},
+  {n:'Strength',i:'💪'},{n:'Agility',i:'🏃'},{n:'Smithing',i:'🔨'},
+  {n:'Defence',i:'🛡️'},{n:'Herblore',i:'🌿'},{n:'Fishing',i:'🎣'},
+  {n:'Ranged',i:'🏹'},{n:'Thieving',i:'🎭'},{n:'Cooking',i:'🍖'},
+  {n:'Prayer',i:'☀️'},{n:'Crafting',i:'💍'},{n:'Firemaking',i:'🔥'},
+  {n:'Magic',i:'🔮'},{n:'Fletching',i:'🪶'},{n:'Woodcutting',i:'🪓'},
+  {n:'Runecraft',i:'🔵'},{n:'Slayer',i:'💀'},{n:'Farming',i:'🌱'},
+  {n:'Construction',i:'🏠'},{n:'Hunter',i:'🦁'}
+];
+
+// ── Key OSRS quests with requirements & rewards ──────────────────────────────
+const QUESTS = [
+  {name:'Waterfall Quest',reqs:{},skills:{},reward:'QP + 13,750 Attack & Strength XP',unlock:'Baxtorian Falls area',wiki:'Waterfall_Quest'},
+  {name:'Dragon Slayer I',reqs:{QP:32},skills:{},reward:'Rune plate access',unlock:'Green d\'hide & rune platebody',wiki:'Dragon_Slayer_I'},
+  {name:'Priest in Peril',reqs:{},skills:{},reward:'Ectofuntus access',unlock:'Morytania & Barrows region',wiki:'Priest_in_Peril'},
+  {name:'Nature Spirit',reqs:{quests:['Priest in Peril']},skills:{Crafting:18,Slayer:18},reward:'Druid pouch',unlock:'Morytania shortcut',wiki:'Nature_Spirit'},
+  {name:'Lost City',reqs:{},skills:{Crafting:31,Woodcutting:36},reward:'Dragon Longsword/Dagger',unlock:'Dragon weapons',wiki:'Lost_City'},
+  {name:'Jungle Potion',reqs:{},skills:{Herblore:3},reward:'Herblore xp',unlock:'Tai Bwo Wannai activities',wiki:'Jungle_Potion'},
+  {name:'Vampire Slayer',reqs:{},skills:{},reward:'3825 Attack XP',unlock:'',wiki:'Vampire_Slayer'},
+  {name:'Ernest the Chicken',reqs:{},skills:{},reward:'300gp',unlock:'',wiki:'Ernest_the_Chicken'},
+  {name:'Imp Catcher',reqs:{},skills:{},reward:'875 Magic XP',unlock:'',wiki:'Imp_Catcher'},
+  {name:'Witch\'s Potion',reqs:{},skills:{},reward:'325 Magic XP',unlock:'',wiki:"Witch%27s_Potion"},
+  {name:'Cook\'s Assistant',reqs:{},skills:{},reward:'300 Cooking XP',unlock:'',wiki:"Cook%27s_Assistant"},
+  {name:'Romeo & Juliet',reqs:{},skills:{},reward:'5 Quest Points',unlock:'',wiki:'Romeo_%26_Juliet'},
+  {name:'Shield of Arrav',reqs:{},skills:{},reward:'600 Thieving XP',unlock:'',wiki:'Shield_of_Arrav'},
+  {name:'Rune Mysteries',reqs:{},skills:{},reward:'Runecrafting access',unlock:'Runecrafting skill',wiki:'Rune_Mysteries'},
+  {name:'The Restless Ghost',reqs:{},skills:{},reward:'1125 Prayer XP',unlock:'Amulet of ghost speak',wiki:'The_Restless_Ghost'},
+  {name:'Mountain Daughter',reqs:{},skills:{Agility:20},reward:'2000 Prayer XP',unlock:'Bear/Emote',wiki:'Mountain_Daughter'},
+  {name:'Dwarf Cannon',reqs:{},skills:{},reward:'750 Crafting XP',unlock:'Dwarf Cannon (Ranged)',wiki:'Dwarf_Cannon'},
+  {name:'Underground Pass',reqs:{quests:['Biohazard']},skills:{Agility:25},reward:'3k Agility XP',unlock:'Elf lands access',wiki:'Underground_Pass'},
+  {name:'Biohazard',reqs:{quests:['Plague City']},skills:{},reward:'3k Thieving XP',unlock:'Mourner gear',wiki:'Biohazard'},
+  {name:'Plague City',reqs:{},skills:{},reward:'2425 Mining XP',unlock:'Ardougne area',wiki:'Plague_City'},
+  {name:'Fishing Contest',reqs:{},skills:{Fishing:10},reward:'2437 Fishing XP',unlock:'Trollheim pass',wiki:'Fishing_Contest'},
+  {name:'Animal Magnetism',reqs:{quests:['Lair of Tarn Razorlor','Ernest the Chicken','Priest in Peril']},skills:{Slayer:18,Crafting:19,Ranged:30,Woodcutting:35},reward:'1000 Slayer XP',unlock:'Ava\'s devices',wiki:'Animal_Magnetism'},
+  {name:'Dragon Slayer II',reqs:{QP:200,quests:['Legends Quest']},skills:{Magic:75,Smithing:70,Mining:68,Agility:60,Thieving:60,Construction:50,Crafting:50},reward:'18k Smithing/Mining XP',unlock:'Mythical Cape + anti-dragon shield',wiki:'Dragon_Slayer_II'},
+  {name:'Legends Quest',reqs:{QP:107,quests:['Family Crest','Heroes Quest','Shilo Village']},skills:{Agility:50,Crafting:50,Herblore:45,Magic:56,Mining:52,Prayer:42,Smithing:50,Strength:50,Thieving:50,Woodcutting:50},reward:'7650 XP in 4 skills',unlock:'Legends Guild & Cape',wiki:'Legends%27_Quest'},
+  {name:'Heroes Quest',reqs:{QP:55,quests:['Shield of Arrav','Lost City']},skills:{Cooking:53,Fishing:53,Herblore:25,Mining:50,Quest_Points:55},reward:'3025 Fishing + 2825 Mining XP',unlock:'Heroes Guild & Runite bars',wiki:'Heroes%27_Quest'},
+  {name:'Desert Treasure I',reqs:{quests:['Priest in Peril','The Golem','Digsite','Temple of Ikov']},skills:{Magic:53,Thieving:53,Firemaking:50,Slayer:10},reward:'20k Magic XP',unlock:'Ancient Magicks',wiki:'Desert_Treasure_I'},
+  {name:'Lunar Diplomacy',reqs:{quests:['The Fremennik Trials','Lost City']},skills:{Magic:65,Crafting:61,Defence:40,Firemaking:49,Herblore:5,Mining:60,Woodcutting:55},reward:'9k Magic XP',unlock:'Lunar spellbook',wiki:'Lunar_Diplomacy'},
+  {name:'Monkey Madness I',reqs:{quests:['The Grand Tree','Tree Gnome Village']},skills:{},reward:'35k XP in combat skills',unlock:'Dragon scimitar',wiki:'Monkey_Madness_I'},
+  {name:'Regicide',reqs:{quests:['Underground Pass']},skills:{Agility:56,Crafting:10},reward:'13k Agility XP',unlock:'Elf lands & crystal items',wiki:'Regicide'},
+  {name:'Priest in Peril',reqs:{},skills:{},reward:'1406 Prayer XP',unlock:'Morytania region',wiki:'Priest_in_Peril'},
+  {name:'Fremennik Trials',reqs:{},skills:{Crafting:40,Woodcutting:40,Fletching:25,Farming:5,Firemaking:25,Smithing:20},reward:'2813 XP in combat skills',unlock:'Neitiznot + Lunar island',wiki:'The_Fremennik_Trials'},
+  {name:'Cabin Fever',reqs:{quests:['Pirate\'s Treasure','Rum Deal','Zogre Flesh Eaters']},skills:{Agility:42,Crafting:45,Ranged:40,Smithing:50},reward:'7k Agility XP',unlock:'Mos Le\'Harmless + Trouble Brewing',wiki:'Cabin_Fever'},
+];
+
+// ── Boss data ─────────────────────────────────────────────────────────────────
+const BOSSES = [
+  {
+    name:'Barrows',icon:'💀',kph:15,gpPerKill:85000,
+    reqs:{Prayer:43},quests:['Priest in Peril'],
+    drops:'Barrows armour pieces',
+    tip:'43 Prayer, Ibans/Trident for mages. Avg 85k/chest.',
+    wiki:'Barrows'
+  },
+  {
+    name:'Zulrah',icon:'🐍',kph:35,gpPerKill:160000,
+    reqs:{Magic:75,Ranged:70},quests:['Regicide'],
+    drops:'Tanzanite fang, serpentine visage, magic fang',
+    tip:'Requires Regicide. 75 Magic + 70 Ranged ideal. ~160k avg.',
+    wiki:'Zulrah'
+  },
+  {
+    name:'Vorkath',icon:'🐉',kph:30,gpPerKill:145000,
+    reqs:{Defence:70,Magic:70,Prayer:60},quests:['Dragon Slayer II'],
+    drops:'Dragonbone necklace, skeletal visage, draconic visage',
+    tip:'Requires Dragon Slayer II. Very consistent 145k/kill avg.',
+    wiki:'Vorkath'
+  },
+  {
+    name:'Giant Mole',icon:'🐾',kph:80,gpPerKill:12000,
+    reqs:{Mining:1},quests:[],
+    drops:'Mole skin, mole claw',
+    tip:'Beginner boss. Use Falador shield 3 for faster claws finding.',
+    wiki:'Giant_Mole'
+  },
+  {
+    name:'Dagannoth Kings',icon:'👑',kph:60,gpPerKill:55000,
+    reqs:{Defence:65,Magic:70,Ranged:70,Attack:70},quests:['Waterbirth Island'],
+    drops:'Berserker ring, seers ring, archers ring, archer helm',
+    tip:'Three bosses — one for each combat style. Rings highly valuable.',
+    wiki:'Dagannoth_Kings'
+  },
+  {
+    name:'Cerberus',icon:'🔥',kph:65,gpPerKill:120000,
+    reqs:{Slayer:91},quests:[],
+    drops:'Primordial, pegasian, eternal crystals, smouldering stone',
+    tip:'Slayer task only. 91 Slayer required. Premium boot upgrades.',
+    wiki:'Cerberus'
+  },
+  {
+    name:'Theatre of Blood',icon:'🩸',kph:3,gpPerKill:800000,
+    reqs:{Attack:80,Magic:80,Ranged:80,Defence:80,Prayer:70,Herblore:78},quests:[],
+    drops:'Scythe of Vitur, Justiciar armour, Avernic defender',
+    tip:'Raid — team of 1-5. Highest consistent GP in game.',
+    wiki:'Theatre_of_Blood'
+  },
+  {
+    name:'Chambers of Xeric',icon:'🏔',kph:3,gpPerKill:450000,
+    reqs:{Attack:75,Magic:78,Ranged:75,Defence:75,Prayer:70,Herblore:78},quests:[],
+    drops:'Twisted bow, Kodai wand, Elder maul',
+    tip:'Raid — scales to party size. Twisted bow potential.',
+    wiki:'Chambers_of_Xeric'
+  },
+  {
+    name:'King Black Dragon',icon:'🐲',kph:55,gpPerKill:35000,
+    reqs:{Ranged:60,Defence:50,Prayer:43},quests:[],
+    drops:'Draconic visage, dragon items',
+    tip:'Beginner dragon boss. Anti-dragon shield required.',
+    wiki:'King_Black_Dragon'
+  },
+  {
+    name:'Corporeal Beast',icon:'💎',kph:10,gpPerKill:380000,
+    reqs:{Attack:80,Strength:80,Defence:80,Magic:70},quests:[],
+    drops:'Elysian, Arcane, Spectral spirit shields',
+    tip:'Solo is very slow. Best in large teams. Drops are massive.',
+    wiki:'Corporeal_Beast'
+  },
+  {
+    name:'Nightmare',icon:'😱',kph:5,gpPerKill:650000,
+    reqs:{Magic:80,Ranged:80,Defence:80,Prayer:70},quests:['Slepe'],
+    drops:'Inquisitor armour, harmonised orb, nightmare staff',
+    tip:'Similar to raids in difficulty. Very high ceiling drops.',
+    wiki:'The_Nightmare'
+  },
+  {
+    name:'Alchemical Hydra',icon:'🔱',kph:35,gpPerKill:185000,
+    reqs:{Slayer:95},quests:[],
+    drops:'Hydra tail, eye, heart, claw — boots upgrades',
+    tip:'95 Slayer task only. Dragon hunter lance + void = fastest.',
+    wiki:'Alchemical_Hydra'
+  },
+];
+
+// ── State ────────────────────────────────────────────────────────────────────
+let mode = 'normal';
+let currentTab = 'quest';
+let account = null;
+let cache = {};
+let selectedBoss = null;
+
+// ── Mode switching ───────────────────────────────────────────────────────────
+function setMode(m) {
+  mode = m;
+  document.getElementById('mt-normal').className = 'mt-btn' + (m==='normal'?' sel-normal':'');
+  document.getElementById('mt-iron').className = 'mt-btn iron' + (m==='iron'?' sel-iron':'');
+  document.getElementById('pill-normal').className = 'mode-pill' + (m==='normal'?' active-normal':'');
+  document.getElementById('pill-iron').className = 'mode-pill' + (m==='iron'?' active-iron':'');
+  if (account) { cache = {}; switchTab(currentTab); }
+}
+
+function setStatus(msg, type='') {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = 'status' + (type ? ' '+type : '');
+}
+
+// ── Fetch hiscores ────────────────────────────────────────────────────────────
+async function scan() {
+  const username = document.getElementById('usr').value.trim();
+  if (!username) { setStatus('Please enter a username.', 'error'); return; }
+  setStatus('Contacting Hiscores…', 'loading');
+  document.getElementById('scan-btn').disabled = true;
+  document.getElementById('results').style.display = 'none';
+  cache = {}; selectedBoss = null;
+
+  try {
+    let text;
+    if (PROXY_BASE) {
+      const r = await fetch(`${PROXY_BASE}/api/hiscores/${encodeURIComponent(username)}`);
+      if (!r.ok) throw new Error('Player not found');
+      text = await r.text();
+    } else {
+      const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent('https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws?player='+encodeURIComponent(username))}`;
+      const r = await fetch(proxy);
+      if (!r.ok) throw new Error('Network error');
+      const w = await r.json();
+      if (!w.contents || w.contents.length < 30) throw new Error('Player not found');
+      text = w.contents;
+    }
+
+    account = parseHS(text, username);
+    renderSkills(account);
+    document.getElementById('results').style.display = 'block';
+    setStatus(`✓ Loaded ${username} — Total Level ${account.totalLevel.toLocaleString()}`, 'ok');
+    switchTab('quest');
+  } catch(e) {
+    setStatus(`Could not find "${username}". Check spelling and try again.`, 'error');
+  } finally {
+    document.getElementById('scan-btn').disabled = false;
+  }
+}
+
+function parseHS(text, username) {
+  const lines = text.trim().split('\n');
+  const skills = {};
+  SKILLS.forEach((sk, i) => {
+    const line = lines[i+1];
+    if (line) {
+      const p = line.split(',');
+      skills[sk.n] = { level: Math.max(1, parseInt(p[1])||1), xp: parseInt(p[2])||0 };
+    } else {
+      skills[sk.n] = { level: 1, xp: 0 };
+    }
+  });
+  const overall = lines[0]?.split(',');
+  const totalLevel = parseInt(overall?.[1]) || Object.values(skills).reduce((a,s)=>a+s.level,0);
+  return { username, skills, totalLevel };
+}
+
+function getLv(skill) { return account?.skills?.[skill]?.level || 1; }
+
+// ── Render skills ────────────────────────────────────────────────────────────
+function renderSkills(data) {
+  const grid = document.getElementById('skills-grid');
+  grid.innerHTML = '';
+  SKILLS.forEach(sk => {
+    const lv = data.skills[sk.n]?.level || 1;
+    const el = document.createElement('div');
+    el.className = 'sc';
+    el.innerHTML = `<span class="si">${sk.i}</span><div class="sinfo"><span class="sn">${sk.n}</span><span class="sl${lv===99?' maxed':''}">${lv}</span></div>`;
+    grid.appendChild(el);
+  });
+  document.getElementById('total-lv').textContent = data.totalLevel.toLocaleString();
+}
+
+// ── Tab switching ────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  ['quest','gear','money','boss'].forEach(t => {
+    document.getElementById('tab-'+t).className = 'tab-btn' + (t===tab?' active':'');
+  });
+  if (tab === 'boss') { renderBossCalc(); return; }
+
+  const key = `${mode}-${tab}`;
+  if (cache[key]) { document.getElementById('adv-content').innerHTML = cache[key]; return; }
+
+  document.getElementById('adv-content').innerHTML = `<div class="loading-state"><div class="spinner">🔮</div><span>Consulting the wise old men…</span></div>`;
+  loadAI(tab);
+}
+
+// ── AI advice tabs ────────────────────────────────────────────────────────────
+async function loadAI(tab) {
+  const skillStr = SKILLS.map(s => `${s.n}:${getLv(s.n)}`).join(', ');
+  const modeCtx = mode === 'iron'
+    ? 'IRONMAN account — cannot use GE or player trade. All resources self-obtained.'
+    : 'Normal account with Grand Exchange access.';
+  const tabCtx = {
+    quest: 'important quest recommendations with specific requirements and major unlocks. Focus on quests that unlock major content like Barrows, Ancient Magicks, Dragon weapons, new areas, or important QP milestones.',
+    gear: 'gear upgrade progression from their current combat levels. Name specific items, their stats, where to obtain them (drop source or GE price range), and why each upgrade matters.',
+    money: 'non-bossing money making methods appropriate for their skills. Include skilling methods, resource gathering, and any relevant thieving/farming methods. Give realistic gp/hr for each.'
+  };
+
+  const prompt = `You are an expert OSRS advisor. Player: ${account.username}, ${modeCtx}, Total Level: ${account.totalLevel}.
+Skills: ${skillStr}
+
+Give exactly 7 recommendations for: ${tabCtx[tab]}
+
+Return ONLY valid JSON array, no markdown, no preamble:
+[{"priority":"high|medium|low","type":"quest|skill|gear|money|unlock","title":"string","description":"2-3 sentences","requirements":"string","benefit":"string","wiki":"slug"}]`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{role:'user', content: prompt}]
+      })
+    });
+    const data = await res.json();
+    const raw = data.content?.[0]?.text || '[]';
+    let steps;
+    try { steps = JSON.parse(raw.replace(/```json|```/g,'').trim()); }
+    catch { steps = []; }
+    const html = buildAdviceHTML(steps);
+    cache[`${mode}-${tab}`] = html;
+    document.getElementById('adv-content').innerHTML = html;
+  } catch(e) {
+    document.getElementById('adv-content').innerHTML = `<div class="loading-state">⚠️ Failed to load. Please try again.</div>`;
+  }
+}
+
+function buildAdviceHTML(steps) {
+  if (!steps?.length) return `<div class="empty-state"><div class="empty-icon">📜</div><p class="empty-text">No recommendations generated. Try again.</p></div>`;
+  const modeFlag = mode === 'iron' ? `<div class="iron-flag">🛡 Ironman — No GE / Trading</div>` : '';
+  const bmap = {quest:'b-quest',skill:'b-skill',gear:'b-gear',money:'b-money',unlock:'b-unlock'};
+  const high = steps.filter(s=>s.priority==='high');
+  const med = steps.filter(s=>s.priority==='medium');
+  const low = steps.filter(s=>s.priority==='low');
+  const render = arr => arr.map(s => {
+    const wurl = s.wiki ? `https://oldschool.runescape.wiki/w/${s.wiki.replace(/^.*\/w\//,'')}` : '#';
+    return `<div class="step-card pri-${s.priority==='high'?'high':s.priority==='medium'?'med':'low'}">
+      <a class="wiki-link" href="${wurl}" target="_blank">Wiki ↗</a>
+      <div class="badge ${bmap[s.type]||'b-skill'}">${esc(s.type)}</div>
+      <div class="step-title">${esc(s.title)}</div>
+      <div class="step-desc">${esc(s.description)}</div>
+      <div class="step-meta">
+        ${s.requirements?`<div class="chip">📋 <span>${esc(s.requirements)}</span></div>`:''}
+        ${s.benefit?`<div class="chip">🏆 <span>${esc(s.benefit)}</span></div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+  let out = modeFlag;
+  if (high.length) out += `<div class="sec-label">🔴 Top Priority</div>${render(high)}`;
+  if (med.length) out += `<div class="sec-label">🟡 Recommended</div>${render(med)}`;
+  if (low.length) out += `<div class="sec-label">🟢 When Ready</div>${render(low)}`;
+  return out;
+}
+
+// ── Quest tracker (always rule-based, no AI) ─────────────────────────────────
+function buildQuestTab() {
+  const qpEst = estimateQP();
+  const scored = QUESTS.map(q => {
+    const status = getQuestStatus(q, qpEst);
+    return {...q, status};
+  }).sort((a,b) => {
+    const order = {ready:0, soon:1, locked:2};
+    return order[a.status] - order[b.status];
+  });
+
+  const modeFlag = mode === 'iron' ? `<div class="iron-flag">🛡 Ironman — Prioritise quest XP rewards</div>` : '';
+  const ready = scored.filter(q=>q.status==='ready');
+  const soon = scored.filter(q=>q.status==='soon');
+  const locked = scored.filter(q=>q.status==='locked');
+
+  const renderQ = arr => arr.map(q => {
+    const dotCls = {ready:'dot-ready',soon:'dot-soon',locked:'dot-locked'}[q.status];
+    const badgeCls = {ready:'b-ready',soon:'b-soon',locked:'b-locked'}[q.status];
+    const badgeTxt = {ready:'Can Do Now',soon:'Almost Ready',locked:'Requirements Missing'}[q.status];
+    const wurl = `https://oldschool.runescape.wiki/w/${q.wiki}`;
+    const missingSkills = getMissingSkills(q);
+    return `<div class="quest-row">
+      <div class="quest-status-dot ${dotCls}"></div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+          <span class="quest-name">${esc(q.name)}</span>
+          <span class="badge ${badgeCls}">${badgeTxt}</span>
+        </div>
+        ${q.unlock ? `<div class="quest-reqs">🔓 Unlocks: ${esc(q.unlock)}</div>` : ''}
+        ${missingSkills.length ? `<div class="quest-reqs" style="color:var(--red)">⚠ Need: ${esc(missingSkills.join(', '))}</div>` : ''}
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div class="quest-reward">${esc(q.reward)}</div>
+        <a href="${wurl}" target="_blank" style="font-size:.65rem;color:var(--blue);font-family:'Cinzel',serif;text-decoration:none;opacity:.6">Wiki ↗</a>
+      </div>
+    </div>`;
+  }).join('');
+
+  let out = modeFlag;
+  out += `<div style="display:flex;gap:.75rem;margin-bottom:.9rem;flex-wrap:wrap">
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:.5rem .9rem;flex:1;min-width:120px;text-align:center">
+      <div style="font-family:'Source Code Pro',monospace;font-size:1.3rem;color:var(--green2)">${ready.length}</div>
+      <div style="font-size:.68rem;color:var(--text3);font-family:'Cinzel',serif;text-transform:uppercase;letter-spacing:.05em">Ready to Do</div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:.5rem .9rem;flex:1;min-width:120px;text-align:center">
+      <div style="font-family:'Source Code Pro',monospace;font-size:1.3rem;color:var(--amber)">${soon.length}</div>
+      <div style="font-size:.68rem;color:var(--text3);font-family:'Cinzel',serif;text-transform:uppercase;letter-spacing:.05em">Almost Ready</div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:.5rem .9rem;flex:1;min-width:120px;text-align:center">
+      <div style="font-family:'Source Code Pro',monospace;font-size:1.3rem;color:var(--text3)">${qpEst}</div>
+      <div style="font-size:.68rem;color:var(--text3);font-family:'Cinzel',serif;text-transform:uppercase;letter-spacing:.05em">Est. Quest Points</div>
+    </div>
+  </div>`;
+
+  if (ready.length) out += `<div class="sec-label">✅ Do These Now</div><div class="quest-tracker">${renderQ(ready)}</div>`;
+  if (soon.length) out += `<div class="sec-label">⏳ Almost Ready</div><div class="quest-tracker">${renderQ(soon)}</div>`;
+  if (locked.length) out += `<div class="sec-label">🔒 Locked</div><div class="quest-tracker">${renderQ(locked.slice(0,8))}</div>`;
+  return out;
+}
+
+function estimateQP() {
+  // Rough heuristic based on total level
+  const tl = account.totalLevel;
+  if (tl < 200) return Math.floor(tl * 0.1);
+  if (tl < 500) return Math.floor(tl * 0.15);
+  if (tl < 1000) return Math.floor(tl * 0.18);
+  return Math.floor(tl * 0.2);
+}
+
+function getQuestStatus(q, qp) {
+  const missing = getMissingSkills(q);
+  const qpOk = !q.reqs.QP || qp >= q.reqs.QP;
+  if (!qpOk) return 'locked';
+  if (missing.length === 0) return 'ready';
+  // "soon" = within 10 levels of all requirements
+  const allClose = missing.every(m => {
+    const match = m.match(/(\w+)\s+(\d+)/);
+    if (!match) return false;
+    const needed = parseInt(match[2]);
+    const have = getLv(match[1]);
+    return (needed - have) <= 10;
+  });
+  return allClose ? 'soon' : 'locked';
+}
+
+function getMissingSkills(q) {
+  const missing = [];
+  if (!q.skills) return missing;
+  Object.entries(q.skills).forEach(([sk, need]) => {
+    if (sk === 'Quest_Points') return;
+    const have = getLv(sk);
+    if (have < need) missing.push(`${sk} ${need} (have ${have})`);
+  });
+  return missing;
+}
+
+// ── Boss Calculator ───────────────────────────────────────────────────────────
+function renderBossCalc() {
+  const content = document.getElementById('adv-content');
+  const modeFlag = mode === 'iron' ? `<div class="iron-flag">🛡 Ironman — values based on alch/NPC sell prices</div>` : '';
+
+  const bossCards = BOSSES.map(b => {
+    const locked = isBossLocked(b);
+    const gph = Math.round(b.kph * b.gpPerKill / 1000) * 1000;
+    return `<div class="boss-card${locked?' locked-boss':''}" id="bcard-${esc(b.name)}" onclick="${locked?'':  `selectBoss(${JSON.stringify(b.name)})`}">
+      <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.3rem">
+        <span style="font-size:1.1rem">${b.icon}</span>
+        <span class="boss-name">${esc(b.name)}</span>
+      </div>
+      <div class="boss-kph">~${b.kph} kills/hr</div>
+      <div class="boss-gph">${locked ? '—' : (gph/1000000>=1 ? (gph/1000000).toFixed(1)+'M' : Math.round(gph/1000)+'k') + ' gp/hr'}</div>
+      <div class="boss-reqs-text">${bossReqSummary(b)}</div>
+      ${locked ? `<div class="boss-lock-reason">⛔ ${getLockReason(b)}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  const calcSection = selectedBoss ? buildCalcSection() : `<div class="calc-box" style="text-align:center;color:var(--text3);font-style:italic;padding:1.5rem">Click a boss above to open the calculator</div>`;
+
+  content.innerHTML = `${modeFlag}
+    <div class="sec-label">⚔ Select a Boss</div>
+    <div class="boss-grid">${bossCards}</div>
+    <div id="calc-area">${calcSection}</div>`;
+}
+
+function isBossLocked(b) {
+  if (!b.reqs) return false;
+  return Object.entries(b.reqs).some(([sk, lv]) => getLv(sk) < lv);
+}
+
+function getLockReason(b) {
+  const missing = Object.entries(b.reqs||{}).filter(([sk,lv]) => getLv(sk) < lv);
+  return missing.map(([sk,lv]) => `${sk} ${lv}`).join(', ');
+}
+
+function bossReqSummary(b) {
+  if (!b.reqs || !Object.keys(b.reqs).length) return 'No stat requirements';
+  return Object.entries(b.reqs).map(([sk,lv]) => `${sk} ${lv}`).join(' · ');
+}
+
+function selectBoss(name) {
+  selectedBoss = BOSSES.find(b => b.name === name);
+  // Highlight selected card
+  document.querySelectorAll('.boss-card').forEach(c => c.classList.remove('selected'));
+  const card = document.getElementById('bcard-'+name);
+  if (card) card.classList.add('selected');
+  document.getElementById('calc-area').innerHTML = buildCalcSection();
+}
+
+function buildCalcSection() {
+  if (!selectedBoss) return '';
+  const b = selectedBoss;
+  const gph = b.kph * b.gpPerKill;
+  return `<div class="calc-box">
+    <div class="calc-title">${b.icon} ${esc(b.name)} — Income Calculator</div>
+    <div style="font-size:.8rem;color:var(--text2);margin-bottom:.85rem;font-style:italic">${esc(b.tip)}</div>
+
+    <div class="calc-row">
+      <span class="calc-label">Kills per hour</span>
+      <input class="calc-input" id="kph-in" type="number" value="${b.kph}" min="1" max="500" oninput="updateCalc()">
+      <span style="font-size:.78rem;color:var(--text3);margin-left:.25rem">kills/hr</span>
+    </div>
+    <div class="calc-row">
+      <span class="calc-label">Avg loot / kill</span>
+      <input class="calc-input" id="gk-in" type="number" value="${b.gpPerKill}" min="1" oninput="updateCalc()">
+      <span style="font-size:.78rem;color:var(--text3);margin-left:.25rem">gp</span>
+    </div>
+    <div class="calc-row">
+      <span class="calc-label">Supply cost / hr</span>
+      <input class="calc-input" id="sup-in" type="number" value="${Math.round(gph*0.08)}" min="0" oninput="updateCalc()">
+      <span style="font-size:.78rem;color:var(--text3);margin-left:.25rem">gp/hr</span>
+    </div>
+    <div class="calc-row">
+      <span class="calc-label">Hours per session</span>
+      <input class="calc-input" id="hrs-in" type="number" value="2" min="0.5" max="24" step="0.5" oninput="updateCalc()">
+      <span style="font-size:.78rem;color:var(--text3);margin-left:.25rem">hrs</span>
+    </div>
+
+    <div class="calc-result" id="calc-result">
+      ${calcResultHTML(b.kph, b.gpPerKill, Math.round(gph*0.08), 2)}
+    </div>
+
+    <div style="margin-top:.75rem;padding-top:.65rem;border-top:1px solid var(--border)">
+      <div style="font-size:.72rem;color:var(--text3)">📦 Notable drops: ${esc(b.drops)}</div>
+    </div>
+  </div>`;
+}
+
+function updateCalc() {
+  const kph = parseFloat(document.getElementById('kph-in')?.value) || 0;
+  const gpk = parseFloat(document.getElementById('gk-in')?.value) || 0;
+  const sup = parseFloat(document.getElementById('sup-in')?.value) || 0;
+  const hrs = parseFloat(document.getElementById('hrs-in')?.value) || 1;
+  document.getElementById('calc-result').innerHTML = calcResultHTML(kph, gpk, sup, hrs);
+}
+
+function calcResultHTML(kph, gpk, sup, hrs) {
+  const grossGph = kph * gpk;
+  const netGph = grossGph - sup;
+  const kills = Math.round(kph * hrs);
+  const grossSess = Math.round(grossGph * hrs);
+  const netSess = Math.round(netGph * hrs);
+  const fmt = v => v >= 1000000 ? (v/1000000).toFixed(2)+'M' : v >= 1000 ? Math.round(v/1000)+'k' : v.toString();
+  return `
+    <div class="calc-stat"><span class="calc-stat-val" style="color:var(--gold2)">${fmt(Math.round(grossGph))}</span><span class="calc-stat-lbl">Gross gp/hr</span></div>
+    <div class="calc-stat"><span class="calc-stat-val" style="color:var(--green2)">${fmt(Math.round(netGph))}</span><span class="calc-stat-lbl">Net gp/hr</span></div>
+    <div class="calc-stat"><span class="calc-stat-val" style="color:var(--amber)">${kills.toLocaleString()}</span><span class="calc-stat-lbl">Kills / session</span></div>
+    <div class="calc-stat" style="margin-top:.5rem"><span class="calc-stat-val" style="color:var(--gold2)">${fmt(grossSess)}</span><span class="calc-stat-lbl">Gross / session</span></div>
+    <div class="calc-stat" style="margin-top:.5rem"><span class="calc-stat-val" style="color:var(--green2)">${fmt(netSess)}</span><span class="calc-stat-lbl">Net / session</span></div>
+    <div class="calc-stat" style="margin-top:.5rem"><span class="calc-stat-val" style="color:var(--blue2)">${fmt(Math.round(netGph*24))}</span><span class="calc-stat-lbl">Net / 24hr grind</span></div>`;
+}
+
+// ── Quest tab override (rule-based) ──────────────────────────────────────────
+const origSwitchTab = switchTab;
+function switchTab(tab) {
+  currentTab = tab;
+  ['quest','gear','money','boss'].forEach(t => {
+    document.getElementById('tab-'+t).className = 'tab-btn' + (t===tab?' active':'');
+  });
+  if (!account) return;
+  if (tab === 'boss') { renderBossCalc(); return; }
+  if (tab === 'quest') {
+    const key = `${mode}-quest`;
+    if (!cache[key]) cache[key] = buildQuestTab();
+    document.getElementById('adv-content').innerHTML = cache[key];
+    return;
+  }
+  const key = `${mode}-${tab}`;
+  if (cache[key]) { document.getElementById('adv-content').innerHTML = cache[key]; return; }
+  document.getElementById('adv-content').innerHTML = `<div class="loading-state"><div class="spinner">🔮</div><span>Consulting the wise old men…</span></div>`;
+  loadAI(tab);
+}
+
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// init
+setMode('normal');
+</script>
+</body>
+</html>
